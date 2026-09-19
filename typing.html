@@ -1,0 +1,799 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typing Trial</title>
+<style>
+  :root {
+    --ink: #1c2620;
+    --ink-2: #232f27;
+    --paper: #e9e2cf;
+    --paper-dim: #ddd4bb;
+    --line: #b9ac86;
+    --seal: #a3392a;
+    --seal-dark: #832c20;
+    --moss: #4f7a5f;
+    --moss-bright: #6ea67f;
+    --text-on-paper: #2a2620;
+    --text-soft: #6b6455;
+    --text-on-ink: #eee7d4;
+    --text-on-ink-soft: #9aa79c;
+    --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --font-mono: 'Consolas', 'SFMono-Regular', ui-monospace, Menlo, Monaco, monospace;
+    --font-sans: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --radius: 3px;
+  }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ink);
+    background-image:
+      repeating-linear-gradient(180deg, rgba(233,226,207,0.035) 0px, rgba(233,226,207,0.035) 1px, transparent 1px, transparent 34px);
+    color: var(--text-on-ink);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 18px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 620px;
+  }
+
+  header.masthead {
+    text-align: left;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(233,226,207,0.18);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header.masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: 0.2px;
+    margin: 0;
+    color: var(--text-on-ink);
+  }
+  header.masthead .tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-on-ink-soft);
+  }
+
+  .card {
+    background: var(--paper);
+    color: var(--text-on-paper);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    padding: 36px 34px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: var(--moss);
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-soft);
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+  }
+  .field input[type="text"] {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 17px;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fbf8ef;
+    color: var(--text-on-paper);
+  }
+  .field input[type="text"]:focus {
+    outline: 2px solid var(--moss);
+    outline-offset: 1px;
+  }
+
+  /* Role choice */
+  .choice-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .choice-stub {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 22px 18px;
+    background: var(--paper-dim);
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-sans);
+    color: var(--text-on-paper);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .choice-stub:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
+  .choice-stub:focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
+  .choice-stub .stub-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+  .choice-stub .stub-desc {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .lede {
+    font-size: 14.5px;
+    color: var(--text-soft);
+    line-height: 1.55;
+    margin: 0 0 22px;
+  }
+
+  button.primary {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 22px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--moss);
+    color: #f5f2e6;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button.primary:hover { background: var(--moss-bright); }
+  button.primary:disabled { background: #9a9683; cursor: not-allowed; }
+
+  button.ghost {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+  button.ghost:hover { border-color: var(--moss); color: var(--moss); }
+
+  .back-link {
+    background: none;
+    border: none;
+    color: var(--text-on-ink-soft);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+  }
+  .back-link:hover { color: var(--text-on-ink); }
+
+  /* Typing test */
+  .meter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .meter-row .who {
+    font-family: var(--font-display);
+    font-size: 19px;
+  }
+  .meter-row .clock {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--seal);
+  }
+  .meter-row .clock.warn { color: var(--seal-dark); }
+
+  .passage {
+    font-family: var(--font-mono);
+    font-size: 16.5px;
+    line-height: 1.85;
+    padding: 18px 18px;
+    background: #fbf8ef;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    user-select: none;
+  }
+  .passage .ok { color: var(--moss); }
+  .passage .bad { color: var(--seal); text-decoration: underline wavy var(--seal); text-decoration-thickness: 1px; }
+  .passage .pending { color: var(--text-soft); opacity: 0.55; }
+  .passage .cursor { border-left: 2px solid var(--seal); }
+
+  textarea.typer {
+    width: 100%;
+    min-height: 96px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.7;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fbf8ef;
+    color: var(--text-on-paper);
+    resize: none;
+  }
+  textarea.typer:focus { outline: 2px solid var(--moss); outline-offset: 1px; }
+  textarea.typer:disabled { opacity: 0.6; }
+
+  .actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    gap: 12px;
+  }
+  .hint {
+    font-size: 12.5px;
+    color: var(--text-soft);
+    font-family: var(--font-mono);
+  }
+
+  /* Sealed state */
+  .sealed {
+    text-align: center;
+    padding: 30px 10px 10px;
+  }
+  .stamp {
+    display: inline-block;
+    border: 3px solid var(--seal);
+    color: var(--seal);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22px;
+    padding: 10px 26px;
+    border-radius: 4px;
+    transform: rotate(-4deg);
+    letter-spacing: 1px;
+  }
+  .sealed p {
+    margin-top: 22px;
+    color: var(--text-soft);
+    font-size: 14.5px;
+    line-height: 1.6;
+    max-width: 40ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Judge / examiner view */
+  .gate {
+    text-align: center;
+    padding: 20px 6px 6px;
+  }
+  .gate .stub-title { font-family: var(--font-display); font-size: 20px; margin: 0 0 10px; }
+  .gate p { color: var(--text-soft); font-size: 14px; line-height: 1.6; max-width: 42ch; margin: 0 auto 8px; }
+
+  table.ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 14.5px;
+  }
+  table.ledger th {
+    text-align: left;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-soft);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  table.ledger td {
+    padding: 9px 8px;
+    border-bottom: 1px solid rgba(185,172,134,0.35);
+  }
+  table.ledger td.rank { color: var(--text-soft); width: 30px; }
+  table.ledger td.name { font-family: var(--font-sans); }
+  table.ledger td.wpm { color: var(--moss); font-weight: 600; }
+  table.ledger tr:last-child td { border-bottom: none; }
+
+  .ledger-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ledger-head .stub-title { font-family: var(--font-display); font-size: 20px; margin: 0; }
+  .empty-ledger {
+    text-align: center;
+    padding: 26px 10px;
+    color: var(--text-soft);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  footer.note {
+    margin-top: 18px;
+    font-size: 12px;
+    color: var(--text-on-ink-soft);
+    font-family: var(--font-mono);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 26px 20px; }
+    .choice-row { grid-template-columns: 1fr; }
+    header.masthead h1 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header class="masthead">
+    <h1>Typing Trial</h1>
+    <span class="tag" id="masthead-tag">role: choosing</span>
+  </header>
+
+  <div id="app"></div>
+
+  <footer class="note" id="footnote"></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PASSAGES = [
+    "The old lighthouse keeper climbed the spiral stairs each evening, carrying a lantern that swayed with every step. Below him the sea moved like a dark, breathing animal, and he had long since stopped being afraid of it.",
+    "A good recipe is really a set of instructions written for someone who cannot see your kitchen. It has to explain not just what to do, but when to slow down, and what the dish should look like along the way.",
+    "Before printing presses, a single book could take a monk several months to copy by hand. Every letter was a small act of patience, and a single mistake meant starting the page over from the top.",
+    "The river had carved the canyon so slowly that no one alive had ever seen it change, yet every layer of rock was a record of a year that no longer existed anywhere else.",
+    "Most arguments between old friends are not really about the subject at hand. They are about older disagreements that were never quite finished, wearing a new subject as a kind of borrowed coat."
+  ];
+
+  var TEST_SECONDS = 15* 60;
+  var JUDGE_PASSCODE = "openseal";
+
+  var app = document.getElementById("app");
+  var mastheadTag = document.getElementById("masthead-tag");
+  var footnote = document.getElementById("footnote");
+
+  var db = null, downloadsCap = null;
+  var capsReady = (async function () {
+    try {
+      downloadsCap = window.claude ? await window.claude.use("downloads") : null;
+    } catch (e) { downloadsCap = null; }
+  })();
+
+  function saveFile(filename, data) {
+    if (downloadsCap) {
+      return downloadsCap.save({ filename: filename, data: data }).catch(function () { fallbackSave(filename, data); });
+    }
+    fallbackSave(filename, data);
+    return Promise.resolve();
+  }
+  function fallbackSave(filename, data) {
+    try {
+      var blob = new Blob([data], { type: "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    } catch (e) { /* saving unavailable in this browser */ }
+  }
+
+  var SEAL_KEY = "TT-SEAL-2026";
+  function encodeResult(obj) {
+    var json = JSON.stringify(obj);
+    var xored = "";
+    for (var i = 0; i < json.length; i++) {
+      xored += String.fromCharCode(json.charCodeAt(i) ^ SEAL_KEY.charCodeAt(i % SEAL_KEY.length));
+    }
+    var b64 = btoa(unescape(encodeURIComponent(xored)));
+    return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function decodeResult(code) {
+    var b64 = code.trim().replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    var xored = decodeURIComponent(escape(atob(b64)));
+    var json = "";
+    for (var i = 0; i < xored.length; i++) {
+      json += String.fromCharCode(xored.charCodeAt(i) ^ SEAL_KEY.charCodeAt(i % SEAL_KEY.length));
+    }
+    return JSON.parse(json);
+  }
+
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    attrs = attrs || {};
+    for (var k in attrs) {
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.indexOf("on") === 0 && typeof attrs[k] === "function") e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+
+  function render(node) {
+    app.innerHTML = "";
+    app.appendChild(node);
+  }
+
+  // ---------- Screen: role choice ----------
+  function screenChoice() {
+    mastheadTag.textContent = "role: choosing";
+    var card = el("div", { class: "card" }, [
+      el("p", { class: "lede", text: "A short, timed passage. Your words-per-minute and accuracy are recorded, but only your examiner sees them — you won't see a score here." }),
+      el("div", { class: "choice-row" }, [
+        el("button", { class: "choice-stub", onclick: function () { screenStudentEntry(); } }, [
+          el("p", { class: "stub-title", text: "I'm taking the test" }),
+          el("p", { class: "stub-desc", text: "Type passages as accurately and quickly as you can — a new one follows automatically until time's up." })
+        ]),
+        el("button", { class: "choice-stub", onclick: function () { screenJudge(); } }, [
+          el("p", { class: "stub-title", text: "I'm the examiner" }),
+          el("p", { class: "stub-desc", text: "See every submitted result, ranked by speed." })
+        ])
+      ])
+    ]);
+    render(card);
+    footnote.textContent = "";
+  }
+
+  // ---------- Screen: student enters name ----------
+  function screenStudentEntry() {
+    mastheadTag.textContent = "role: student";
+    var input;
+    var card = el("div", { class: "card" }, [
+      el("button", { class: "back-link", text: "← back", onclick: screenChoice }),
+      el("p", { class: "lede", text: "Enter your name the way you'd like it recorded for your examiner, then start when you're ready. The clock starts on your first keystroke, and new passages will keep arriving automatically until time's up." }),
+      el("div", { class: "field" }, [
+        el("label", { text: "your name" }),
+        (input = el("input", { type: "text", placeholder: "e.g. Asha Rao", autocomplete: "off" }))
+      ]),
+      el("div", { class: "actions-row" }, [
+        el("button", {
+          class: "primary", text: "Start test", onclick: function () {
+            var name = (input.value || "").trim();
+            if (!name) { input.focus(); input.style.outline = "2px solid var(--seal)"; return; }
+            screenTest(name);
+          }
+        }),
+        el("span", { class: "hint", text: "up to 15 minutes" })
+      ])
+    ]);
+    render(card);
+    footnote.textContent = "";
+    setTimeout(function () { input.focus(); }, 10);
+  }
+
+  // ---------- Screen: the test itself ----------
+  function screenTest(studentName) {
+    var passageIdx = -1;
+    var passage = "";
+
+    var startedAt = null;
+    var finished = false;
+    var timerHandle = null;
+
+    var totalTyped = 0;
+    var totalCorrect = 0;
+    var passagesCompleted = 0;
+
+    var clockEl, passageEl, taEl, statusHint, submitBtn, progressHint;
+
+    var card = el("div", { class: "card" }, [
+      el("div", { class: "meter-row" }, [
+        el("span", { class: "who", text: studentName }),
+        (clockEl = el("span", { class: "clock", text: "15:00" }))
+      ]),
+      (passageEl = el("div", { class: "passage" })),
+      (taEl = el("textarea", {
+        class: "typer",
+        rows: "4",
+        placeholder: "Start typing here — the passage above will begin the moment you do.",
+        onpaste: function (ev) { ev.preventDefault(); },
+        oninput: onType,
+        onkeydown: function (ev) {
+          if (startedAt === null && !finished) startTimer();
+        }
+      })),
+      el("div", { class: "actions-row" }, [
+        (submitBtn = el("button", { class: "primary", text: "Finish & seal", disabled: "true", onclick: function () { finishTest(); } })),
+        (statusHint = el("span", { class: "hint", text: "Type the passage above as shown." }))
+      ]),
+      (progressHint = el("p", { class: "hint", style: "margin-top: 10px;", text: "" }))
+    ]);
+    render(card);
+    footnote.textContent = "New passages keep arriving automatically until the timer ends — finish early any time with \u201cFinish & seal.\u201d";
+    nextPassage();
+
+    function nextPassage() {
+      var idx;
+      do { idx = Math.floor(Math.random() * PASSAGES.length); } while (PASSAGES.length > 1 && idx === passageIdx);
+      passageIdx = idx;
+      passage = PASSAGES[idx];
+      taEl.value = "";
+      renderPassage("");
+      updateProgress();
+    }
+
+    function updateProgress() {
+      progressHint.textContent = passagesCompleted > 0
+        ? "Passages completed: " + passagesCompleted + " — keep going, a new one follows automatically."
+        : "";
+    }
+
+    function renderPassage(typed) {
+      passageEl.innerHTML = "";
+      for (var i = 0; i < passage.length; i++) {
+        var ch = passage[i];
+        var span = document.createElement("span");
+        span.textContent = ch;
+        if (i < typed.length) {
+          span.className = typed[i] === ch ? "ok" : "bad";
+        } else {
+          span.className = "pending";
+        }
+        passageEl.appendChild(span);
+      }
+    }
+
+    function countCorrect(typed, ref) {
+      var n = Math.min(typed.length, ref.length);
+      var c = 0;
+      for (var i = 0; i < n; i++) if (typed[i] === ref[i]) c++;
+      return c;
+    }
+
+    function startTimer() {
+      startedAt = Date.now();
+      submitBtn.removeAttribute("disabled");
+      statusHint.textContent = "Timer running — new passages arrive automatically, or click \u201cFinish & seal\u201d any time.";
+      timerHandle = setInterval(function () {
+        var elapsed = (Date.now() - startedAt) / 1000;
+        var remaining = Math.max(0, TEST_SECONDS - elapsed);
+        var mm = Math.floor(remaining / 60);
+        var ss = Math.floor(remaining % 60);
+        clockEl.textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+        if (remaining <= 60) clockEl.classList.add("warn");
+        if (remaining <= 0) finishTest();
+      }, 200);
+    }
+
+    function onType() {
+      if (finished) return;
+      var typed = taEl.value;
+      renderPassage(typed);
+      if (typed.length >= passage.length) {
+        totalCorrect += countCorrect(typed, passage);
+        totalTyped += typed.length;
+        passagesCompleted++;
+        nextPassage();
+      }
+    }
+
+    function finishTest() {
+      if (finished) return;
+      finished = true;
+      if (timerHandle) clearInterval(timerHandle);
+      taEl.disabled = true;
+      submitBtn.setAttribute("disabled", "true");
+
+      var typed = taEl.value;
+      totalCorrect += countCorrect(typed, passage);
+      totalTyped += typed.length;
+
+      var elapsedSeconds = startedAt ? Math.max(1, (Date.now() - startedAt) / 1000) : TEST_SECONDS;
+      elapsedSeconds = Math.min(elapsedSeconds, TEST_SECONDS + 1);
+
+      var correct = totalCorrect;
+      var incorrect = totalTyped - totalCorrect;
+      var accuracy = totalTyped > 0 ? Math.round((correct / totalTyped) * 100) : 0;
+      accuracy = Math.max(0, Math.min(100, accuracy));
+
+      var words = totalTyped / 5;
+      var wpm = Math.round(words / (elapsedSeconds / 60));
+      wpm = Math.max(0, wpm);
+
+      var code = encodeResult({
+        n: studentName,
+        w: wpm,
+        a: accuracy,
+        s: Math.round(elapsedSeconds),
+        c: correct,
+        x: incorrect,
+        p: passageIdx,
+        t: Date.now()
+      });
+      screenSealed(code);
+    }
+  }
+
+  function screenSealed(code) {
+    var codeBox;
+    var card = el("div", { class: "card" }, [
+      el("div", { class: "sealed" }, [
+        el("span", { class: "stamp", text: "SEALED" }),
+        el("p", { text: "Your test is done. Below is your sealed result code — you can't read your score from it. Send it to your examiner (paste it in chat, email, or download it) so they can add it to the ledger." }),
+        el("div", { class: "field", style: "margin-top: 18px; text-align: left;" }, [
+          el("label", { text: "sealed result code" }),
+          (codeBox = el("input", { type: "text", readonly: "true", value: code }))
+        ]),
+        el("div", { class: "actions-row", style: "justify-content: center; gap: 10px;" }, [
+          el("button", {
+            class: "ghost", text: "Copy code", onclick: function (ev) {
+              codeBox.select();
+              navigator.clipboard && navigator.clipboard.writeText(code).catch(function () {});
+              try { document.execCommand("copy"); } catch (e) {}
+              ev.target.textContent = "Copied";
+              setTimeout(function () { ev.target.textContent = "Copy code"; }, 1500);
+            }
+          }),
+          el("button", {
+            class: "ghost", text: "Download code", onclick: async function () {
+              await capsReady;
+              saveFile("typing-trial-result.txt", code);
+            }
+          })
+        ]),
+        el("button", { class: "ghost", text: "Done", onclick: screenChoice, style: "margin-top: 18px;" })
+      ])
+    ]);
+    render(card);
+    footnote.textContent = "";
+  }
+
+  // ---------- Screen: examiner / judge ----------
+  function screenJudge() {
+    mastheadTag.textContent = "role: examiner";
+    var passInput;
+    var card = el("div", { class: "card" }, [
+      el("button", { class: "back-link", text: "← back", onclick: screenChoice }),
+      el("div", { class: "gate" }, [
+        el("p", { class: "stub-title", text: "Examiner's ledger" }),
+        el("p", { text: "Enter the examiner passcode to open the results." }),
+        el("div", { class: "field", style: "max-width: 220px; margin: 14px auto 10px; text-align: left;" }, [
+          (passInput = el("input", { type: "text", placeholder: "passcode", autocomplete: "off" }))
+        ]),
+        el("button", {
+          class: "primary", text: "Open ledger", onclick: function () {
+            if ((passInput.value || "").trim().toLowerCase() === JUDGE_PASSCODE) {
+              screenLedger();
+            } else {
+              passInput.style.outline = "2px solid var(--seal)";
+              passInput.value = "";
+              passInput.placeholder = "try again";
+            }
+          }
+        })
+      ])
+    ]);
+    render(card);
+    footnote.textContent = "";
+    setTimeout(function () { passInput.focus(); }, 10);
+  }
+
+  async function screenLedger() {
+    var rows = [];
+    var pasteArea, addBtn, statusMsg;
+
+    var card = el("div", { class: "card" }, [
+      el("button", { class: "back-link", text: "← back", onclick: screenChoice }),
+      el("div", { class: "ledger-head" }, [
+        el("p", { class: "stub-title", text: "Examiner's ledger" }),
+        el("button", { class: "ghost", text: "Export CSV", onclick: exportCsv })
+      ]),
+      el("p", { class: "lede", style: "margin-bottom: 12px;", text: "Paste one or more sealed codes below (one per line) as students send them to you." }),
+      (pasteArea = el("textarea", { class: "typer", rows: "3", placeholder: "Paste sealed code(s) here, one per line…" })),
+      el("div", { class: "actions-row" }, [
+        (addBtn = el("button", { class: "primary", text: "Add to ledger", onclick: addCodes })),
+        (statusMsg = el("span", { class: "hint", text: rows.length + " result(s) so far" }))
+      ]),
+      el("div", { id: "ledger-body", style: "margin-top: 22px;" })
+    ]);
+    render(card);
+    footnote.textContent = "Codes are decoded in your browser only — nothing is sent anywhere.";
+
+    var body = document.getElementById("ledger-body");
+    renderLedger(body, rows);
+
+    function addCodes() {
+      var lines = pasteArea.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+      var added = 0, failed = 0;
+      lines.forEach(function (line) {
+        try {
+          var r = decodeResult(line);
+          if (r && typeof r.w === "number") {
+            rows.push({ name: r.n, wpm: r.w, accuracy: r.a, elapsedSeconds: r.s, correct: r.c, incorrect: r.x, submittedAt: r.t });
+            added++;
+          } else { failed++; }
+        } catch (e) { failed++; }
+      });
+      rows.sort(function (a, b) { return (b.wpm || 0) - (a.wpm || 0); });
+      pasteArea.value = "";
+      statusMsg.textContent = rows.length + " result(s) so far" + (failed ? " — " + failed + " code(s) unreadable" : "");
+      renderLedger(body, rows);
+    }
+
+    async function exportCsv() {
+      await capsReady;
+      var lines = ["name,wpm,accuracy,correct_chars,incorrect_chars,seconds,submitted_at"];
+      rows.forEach(function (r) {
+        var name = String(r.name || "").replace(/"/g, '""');
+        lines.push('"' + name + '",' + (r.wpm || 0) + "," + (r.accuracy || 0) + "," + (r.correct || 0) + "," + (r.incorrect || 0) + "," + (r.elapsedSeconds || 0) + "," + new Date(r.submittedAt || 0).toISOString());
+      });
+      saveFile("typing-trial-results.csv", lines.join("\n"));
+    }
+  }
+
+  function renderLedger(body, rows) {
+    body.innerHTML = "";
+    if (!rows.length) {
+      body.appendChild(el("div", { class: "empty-ledger", text: "The ledger is empty. Results will appear here the moment a student submits." }));
+      return;
+    }
+    var table = el("table", { class: "ledger" }, [
+      el("thead", {}, [
+        el("tr", {}, [
+          el("th", { text: "#" }),
+          el("th", { text: "Name" }),
+          el("th", { text: "WPM" }),
+          el("th", { text: "Accuracy" }),
+          el("th", { text: "Correct" }),
+          el("th", { text: "Incorrect" }),
+          el("th", { text: "Time" })
+        ])
+      ])
+    ]);
+    var tbody = el("tbody");
+    rows.forEach(function (r, i) {
+      tbody.appendChild(el("tr", {}, [
+        el("td", { class: "rank", text: String(i + 1) }),
+        el("td", { class: "name", text: r.name || "—" }),
+        el("td", { class: "wpm", text: String(r.wpm != null ? r.wpm : "—") }),
+        el("td", { text: (r.accuracy != null ? r.accuracy : "—") + "%" }),
+        el("td", { text: String(r.correct != null ? r.correct : "—") }),
+        el("td", { text: String(r.incorrect != null ? r.incorrect : "—") }),
+        el("td", { text: (r.elapsedSeconds != null ? r.elapsedSeconds : "—") + "s" })
+      ]));
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  screenChoice();
+})();
+</script>
+</body>
+</html>
